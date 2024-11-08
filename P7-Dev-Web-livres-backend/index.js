@@ -5,6 +5,8 @@ const cors = require("cors");
 const bcrypt = require("bcrypt")
 const PORT = 4000;
 
+const { books } = require("./database/books");
+
 app.use(cors());
 app.use(express.json());
 
@@ -13,6 +15,11 @@ app.get("/", function (req, res) {
 });
 app.post("/api/auth/signup", signUp)
 app.post("/api/auth/login", login);
+app.get("/api/books", getBooks);
+
+function getBooks(req, res) {
+    res.send(books);
+};
 
 app.listen(PORT);
 
