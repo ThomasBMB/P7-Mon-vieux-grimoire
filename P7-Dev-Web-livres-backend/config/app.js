@@ -1,13 +1,14 @@
 const express = require('express')
 const cors = require("cors");
-const app = express()
+const app = express();
+require("./../database/mongo.js")
 
-const PORT = process.env.PORT || 4000;
+
 
 app.use(cors());
 app.use(express.json());
-app.use("/images", express.static("uploads"));
+app.use("/" + process.env.IMAGES_FOLDER_PATH, express.static("uploads"));
 
-app.listen(PORT);
+
 
 module.exports = { app };

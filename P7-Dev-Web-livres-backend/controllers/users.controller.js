@@ -1,6 +1,7 @@
 const { User } = require("../models/User");
 const bcrypt = require("bcrypt")
 const express = require('express')
+const jwt = require("jsonwebtoken")
 
 async function signUp(req, res) {
     const email = req.body.email;
@@ -51,8 +52,19 @@ async function login(req, res) {
 
     res.send({
         userId: userInDb._id,
-        token: 'token'
+        token: generateToken(userInDb._id)
     });
+}
+
+function generateToken(idInDb) {
+    const payload = {
+        userId: idInDb
+    };
+    const jwtSecret = String(process.env.JWT_SECRET)
+    const token = jwt.sign(payload, jwtSecret, {
+        expiresIn: "7d"
+    });
+    return token;
 }
 
 function hashPassword(password) {
@@ -73,7 +85,7 @@ function isPasswordCorrect(password, hash) {
 
 const usersRouter = express.Router();
 
-usersRouter.post("signup", signUp)
-usersRouter.post("login", login);
+usersRouter.post("/signup", signUp)
+usersRouter.post("/login", login);
 
 module.exports = { usersRouter };
