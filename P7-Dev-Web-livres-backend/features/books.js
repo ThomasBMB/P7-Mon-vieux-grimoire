@@ -26,22 +26,25 @@ async function postRating(req, res) {
     try {
         const ratings = book.ratings;
 
-        // Vérifier si l'utilisateur a déjà noté ce livre
+        // Vérifie si l'utilisateur a déjà noté ce livre
         if (ratings.some((obj) => obj.userId === userId)) {
             return res.status(400).send("You have already rated this book");
         }
 
-        // Ajouter la nouvelle note
+        // Ajoute la nouvelle note
         const newRating = {
             userId: userId,
             grade: req.body.rating
         };
         ratings.push(newRating);
 
-        // Calculer la moyenne de la note
+        // Calcule la moyenne de la note
         const sum = ratings.reduce((total, curr) => total + curr.grade, 0);
         const numberOfRaters = ratings.length;
-        const averageRating = sum / numberOfRaters;
+        let averageRating = sum / numberOfRaters;
+
+        // Arrondi au demi-point le plus proche
+        averageRating = Math.round(averageRating * 2) / 2;
 
         // Mettre à jour les informations du livre
         book.ratings = ratings;
@@ -54,6 +57,7 @@ async function postRating(req, res) {
         res.status(500).send("An error occurred while rating the book.");
     }
 }
+
 
 
 async function getBooksWithBestRating(req, res) {
