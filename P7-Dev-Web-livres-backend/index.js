@@ -1,9 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-require("./db/mongo");
-const { userRouter } = require("./routers/users.router.js");
-const { bookRouter } = require("./routers/books.router");
+require("./database/mongo.js");
+const { userRouter } = require("./features/users.js");
+const { bookRouter } = require("./features/books.js");
 
 const app = express();
 
@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("uploads"));
+app.use(express.static("images"));
 
 // Routers
 app.use("/api/auth", userRouter);

@@ -1,8 +1,8 @@
 const express = require("express");
-const { Book } = require("../models/Book");
-const { checkToken } = require("../middleware/checkToken");
+const { Book } = require("../mongoose.schemas/Book.js");
+const { checkToken } = require("../middlewares/checkToken.js");
 const multer = require("multer");
-const { storage } = require("../middleware/storage");
+const { storage } = require("../middlewares/storage.js");
 
 const bookRouter = express.Router();
 
@@ -22,30 +22,39 @@ async function postRating(req, res) {
     const id = req.params.id;
     const book = await Book.findById(id);
     const userId = req.body.userIdFromToken;
+
     try {
         const ratings = book.ratings;
+
+        // Vérifier si l'utilisateur a déjà noté ce livre
         if (ratings.some((obj) => obj.userId === userId)) {
             return res.status(400).send("You have already rated this book");
         }
+
+        // Ajouter la nouvelle note
         const newRating = {
             userId: userId,
             grade: req.body.rating
         };
         ratings.push(newRating);
 
-        const sum = ratings.reduce((total, curr) => (total += curr.grade), 0);
+        // Calculer la moyenne de la note
+        const sum = ratings.reduce((total, curr) => total + curr.grade, 0);
         const numberOfRaters = ratings.length;
         const averageRating = sum / numberOfRaters;
+
+        // Mettre à jour les informations du livre
         book.ratings = ratings;
         book.averageRating = averageRating;
 
-        book.save();
+        await book.save();
         res.send(book);
     } catch (error) {
         console.error(error);
+        res.status(500).send("An error occurred while rating the book.");
     }
-
 }
+
 
 async function getBooksWithBestRating(req, res) {
     const books = await Book.find().sort({ averageRating: -1 }).limit(3);
@@ -96,7 +105,14 @@ function postBooks(req, res) {
     const bookStringified = req.body.book;
     const book = JSON.parse(bookStringified);
     const file = req.file;
+
     try {
+        // Calculer la moyenne initiale si des notes sont fournies
+        const ratings = book.ratings || [];
+        const initialAverageRating = ratings.length > 0
+            ? ratings.reduce((sum, rating) => sum + rating.grade, 0) / ratings.length
+            : 0;
+
         const newBook = new Book({
             userId: book.userId,
             title: book.title,
@@ -104,13 +120,15 @@ function postBooks(req, res) {
             imageUrl: file.filename,
             year: book.year,
             genre: book.genre,
-            ratings: book.ratings,
-            averageRating: 0
+            ratings: ratings,
+            averageRating: initialAverageRating // Utilise la moyenne initiale
         });
+
         newBook.save();
         res.send(newBook);
     } catch (error) {
         console.error(error);
+        res.status(500).send("An error occurred while adding the book.");
     }
 }
 

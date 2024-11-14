@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const mongoUrl = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.yrsmq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const mongoUrl = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@${process.env.DB_DOMAIN}`;
 
 async function connect() {
     try {
