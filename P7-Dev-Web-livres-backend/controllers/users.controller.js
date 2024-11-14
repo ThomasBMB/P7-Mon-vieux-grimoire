@@ -1,91 +1,89 @@
 const { User } = require("../models/User");
-const bcrypt = require("bcrypt")
-const express = require('express')
-const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt");
+const express = require("express");
+const jwt = require("jsonwebtoken");
+
+const usersRouter = express.Router();
+usersRouter.post("/signup", signUp);
+usersRouter.post("/login", login);
 
 async function signUp(req, res) {
     const email = req.body.email;
     const password = req.body.password;
-    const userInDb = await User.findOne({
-        email: email
-    });
-    console.log("userInDB", userInDb)
-    if (userInDb != null) {
-        res.status(400).send("Email already exists");
+    if (email == null || password == null) {
+        res.status(400).send("Email and password are required");
         return;
     }
-    const user = {
-        email: email,
-        password: hashPassword(password)
-    };
-    //users.push(user);
+
     try {
-        await User.create(user)
+        const userInDb = await User.findOne({
+            email: email
+        });
+        if (userInDb != null) {
+            res.status(400).send("Email already exists");
+            return;
+        }
+        const user = {
+            email,
+            password: hashPassword(password)
+        };
+        await User.create(user);
+        res.send("Sign up");
     } catch (e) {
         console.error(e);
         res.status(500).send("Something went wrong");
-        return
     }
-    res.send("Sign Up");
 }
 
 async function login(req, res) {
     const body = req.body;
-    console.log('body:', body);
-    console.log(Date.parse())
-
-
-
-    const userInDb = await User.findOne({
-        email: body.email
-    });
-    console.log('userInDb:', userInDb)
-    if (userInDb == null) {
-        res.status(401).send("Wrong email");
+    if (body.email == null || body.password == null) {
+        res.status(400).send("Email and password are required");
         return;
     }
-    const passwordInDB = userInDb.password;
-    if (!isPasswordCorrect(req.body.password, passwordInDB)) {
-        res.status(401).send("Wrong password");
-        return;
-    }
+    try {
+        const userInDb = await User.findOne({
+            email: body.email
+        });
+        if (userInDb == null) {
+            res.status(401).send("Wrong credentials");
+            return;
+        }
+        const passwordInDb = userInDb.password;
+        if (!isPasswordCorrect(req.body.password, passwordInDb)) {
+            res.status(401).send("Wrong credentials");
+            return;
+        }
 
-    res.send({
-        userId: userInDb._id,
-        token: generateToken(userInDb._id)
-    });
+        res.send({
+            userId: userInDb._id,
+            token: generateToken(userInDb._id)
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).send("Something went wrong");
+    }
 }
 
 function generateToken(idInDb) {
     const payload = {
         userId: idInDb
     };
-    const jwtSecret = String(process.env.JWT_SECRET)
+    const jwtSecret = String(process.env.JWT_SECRET);
     const token = jwt.sign(payload, jwtSecret, {
-        expiresIn: "7d"
+        expiresIn: "1d"
     });
     return token;
 }
 
 function hashPassword(password) {
-    console.log("password:", password);
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
-    console.log("hash", hash);
     return hash;
 }
 
 function isPasswordCorrect(password, hash) {
-    console.log('password:', password);
-    console.log("hash:", hash);
-    const isOk = bcrypt.compareSync(password, hash);
-    console.log("isOk:", isOk);
-    return isOk;
+    return bcrypt.compareSync(password, hash);
 }
-
-const usersRouter = express.Router();
-
-usersRouter.post("/signup", signUp)
-usersRouter.post("/login", login);
 
 module.exports = { usersRouter };

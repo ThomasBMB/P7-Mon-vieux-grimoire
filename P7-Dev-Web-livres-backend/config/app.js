@@ -1,14 +1,11 @@
-const express = require('express')
+const express = require("express");
 const cors = require("cors");
 const app = express();
-require("./../database/mongo.js")
+require("./../db/mongo.js");
 
-
-
+const IMAGES_FOLDER = String(process.env.IMAGES_FOLDER);
 app.use(cors());
 app.use(express.json());
-app.use("/" + process.env.IMAGES_FOLDER_PATH, express.static("uploads"));
-
-
+app.use("/" + process.env.IMAGES_PUBLIC_URL, express.static(IMAGES_FOLDER));
 
 module.exports = { app };

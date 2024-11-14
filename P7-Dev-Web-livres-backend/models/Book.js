@@ -15,6 +15,6 @@ const BookSchema = new mongoose.Schema({
     ],
     averageRating: Number
 });
-const Book = mongoose.model('Book', BookSchema);
+const Book = mongoose.model("Book", BookSchema);
 
 module.exports = { Book };
