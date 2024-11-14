@@ -15,7 +15,7 @@ bookRouter.delete("/:id", checkToken, deleteBook);
 
 bookRouter.post("/", checkToken, multer({ storage: storage }).single("image"), postBooks);
 
-bookRouter.put("/:id", checkToken, putBook);
+bookRouter.put("/:id", checkToken, multer({ storage: storage }).single("image"), putBook);
 module.exports = { bookRouter };
 
 async function postRating(req, res) {
@@ -26,31 +26,29 @@ async function postRating(req, res) {
     try {
         const ratings = book.ratings;
 
-        // Vérifie si l'utilisateur a déjà noté ce livre
         if (ratings.some((obj) => obj.userId === userId)) {
             return res.status(400).send("You have already rated this book");
         }
 
-        // Ajoute la nouvelle note
         const newRating = {
             userId: userId,
             grade: req.body.rating
         };
         ratings.push(newRating);
 
-        // Calcule la moyenne de la note
         const sum = ratings.reduce((total, curr) => total + curr.grade, 0);
         const numberOfRaters = ratings.length;
         let averageRating = sum / numberOfRaters;
 
-        // Arrondi au demi-point le plus proche
         averageRating = Math.round(averageRating * 2) / 2;
 
-        // Mettre à jour les informations du livre
         book.ratings = ratings;
         book.averageRating = averageRating;
 
         await book.save();
+
+        book.imageUrl = generateImageUrl(book.imageUrl);
+
         res.send(book);
     } catch (error) {
         console.error(error);
@@ -72,19 +70,30 @@ async function putBook(req, res) {
     const id = req.params.id;
     const book = await Book.findById(id);
     if (!book) return res.status(404).send("Book not found");
+
     const userId = book.userId;
-    if (userId !== req.body.userIdFromToken)
-        return res.status(401).send("You can only update your own books");
-    const result = await Book.findOneAndUpdate(
-        { _id: id },
-        {
-            title: req.body.title,
-            author: req.body.author,
-            year: req.body.year,
-            genre: req.body.genre
-        }
-    );
-    res.send(result);
+
+    const file = req.file;
+    const updates = {
+        title: req.body.title || book.title,
+        author: req.body.author || book.author,
+        year: req.body.year || book.year,
+        genre: req.body.genre || book.genre,
+    };
+
+    if (file) {
+
+        updates.imageUrl = file.filename;
+    }
+
+    try {
+        const updatedBook = await Book.findByIdAndUpdate(id, updates, { new: true });
+        updatedBook.imageUrl = generateImageUrl(updatedBook.imageUrl);
+        res.send(updatedBook);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("An error occurred while updating the book.");
+    }
 }
 
 async function deleteBook(req, res) {
