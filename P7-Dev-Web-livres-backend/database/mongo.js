@@ -6,7 +6,7 @@ console.log("DB_URL", DB_URL);
 
 async function connect() {
     try {
-        const res = await mongoose.connect(DB_URL)
+        await mongoose.connect(DB_URL)
         console.log("Connected to db")
     } catch (e) {
         console.error(e)
