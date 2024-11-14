@@ -1,8 +1,8 @@
-Scripts :
-npm run dev (si nodemon est utilisé)
-npm start
+-Scripts :
+-npm run dev (si nodemon est utilisé)
+-npm start
 
-dépendances :
+-dépendances :
 bcrypt
 cors
 dotenv
