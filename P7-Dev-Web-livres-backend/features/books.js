@@ -46,7 +46,6 @@ async function postRating(req, res) {
         book.averageRating = averageRating;
 
         await book.save();
-
         book.imageUrl = generateImageUrl(book.imageUrl);
 
         res.send(book);
@@ -80,15 +79,16 @@ async function putBook(req, res) {
         year: req.body.year || book.year,
         genre: req.body.genre || book.genre,
     };
-
+    console.log("update", updates)
     if (file) {
 
         updates.imageUrl = file.filename;
     }
-
+    console.log("update", updates)
     try {
         const updatedBook = await Book.findByIdAndUpdate(id, updates, { new: true });
         updatedBook.imageUrl = generateImageUrl(updatedBook.imageUrl);
+
         res.send(updatedBook);
     } catch (error) {
         console.error(error);

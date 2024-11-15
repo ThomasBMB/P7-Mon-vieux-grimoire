@@ -6,7 +6,7 @@ function checkToken(req, res, next) {
     const token = authorization.split(" ")[1];
     try {
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("decodedToken:", decodedToken);
+        //console.log("decodedToken:", decodedToken);
         if (!decodedToken) return res.status(401).send("Unauthorized");
         req.body.userIdFromToken = decodedToken.userId;
         next();
