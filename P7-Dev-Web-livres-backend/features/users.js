@@ -2,6 +2,10 @@ const express = require("express");
 const User = require("../mongoose.schemas/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const userRouter = express.Router();
+
+userRouter.post("/login", logUser);
+userRouter.post("/signup", signupUser);
 
 async function signupUser(req, res) {
   if (!req.body.email || !req.body.password) {
@@ -42,13 +46,11 @@ async function logUser(req, res) {
   }
   res.send({ userId: user._id, token: makeToken(user) });
 }
-const userRouter = express.Router();
-userRouter.post("/login", logUser);
-userRouter.post("/signup", signupUser);
-
-module.exports = { userRouter };
 
 function makeToken(user) {
   const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
   return token;
 }
+
+module.exports = { userRouter };
+

@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require('fs');
+const path = require('path');
 const { Book } = require("../mongoose.schemas/Book.js");
 const { checkToken } = require("../middlewares/checkToken.js");
 const multer = require("multer");
@@ -67,28 +69,34 @@ async function getBooksWithBestRating(req, res) {
 
 async function putBook(req, res) {
     const id = req.params.id;
+
+    // Recherche du livre dans la base de données
     const book = await Book.findById(id);
     if (!book) return res.status(404).send("Book not found");
 
-    const userId = book.userId;
+    // Vérifier si une nouvelle image a été téléchargée
+    const newImage = req.file ? req.file.filename : null;
 
-    const file = req.file;
-    const updates = {
-        title: req.body.title || book.title,
-        author: req.body.author || book.author,
-        year: req.body.year || book.year,
-        genre: req.body.genre || book.genre,
-    };
-    console.log("update", updates)
-    if (file) {
-
-        updates.imageUrl = file.filename;
-    }
-    console.log("update", updates)
     try {
-        const updatedBook = await Book.findByIdAndUpdate(id, updates, { new: true });
+        // Si une nouvelle image a été envoyée, supprimer l'ancienne image
+        if (newImage) deleteImage(book);
+
+
+        // Préparer les données du livre à mettre à jour
+        const bookData = newImage
+            ? {
+                ...JSON.parse(req.body.book), // Récupérer les autres données du livre
+                imageUrl: newImage // Mettre à jour l'URL de l'image
+            }
+            : { ...req.body };
+
+        // Mettre à jour le livre dans la base de données
+        const updatedBook = await Book.findByIdAndUpdate(id, bookData, { new: true });
+
+        // Générer l'URL complète de l'image
         updatedBook.imageUrl = generateImageUrl(updatedBook.imageUrl);
 
+        // Répondre avec le livre mis à jour
         res.send(updatedBook);
     } catch (error) {
         console.error(error);
@@ -104,6 +112,7 @@ async function deleteBook(req, res) {
     if (userIdOnBook !== req.body.userIdFromToken)
         return res.status(401).send("You can only delete your own books");
     const result = await Book.findByIdAndDelete(id);
+    deleteImage(book);
     res.send(result);
 }
 
@@ -114,7 +123,7 @@ async function getBook(req, res) {
     res.send(book);
 }
 
-function postBooks(req, res) {
+async function postBooks(req, res) {
     const bookStringified = req.body.book;
     const book = JSON.parse(bookStringified);
     const file = req.file;
@@ -137,7 +146,7 @@ function postBooks(req, res) {
             averageRating: initialAverageRating // Utilise la moyenne initiale
         });
 
-        newBook.save();
+        await newBook.save();
         res.send(newBook);
     } catch (error) {
         console.error(error);
@@ -159,4 +168,11 @@ function generateImageUrl(localUrl) {
     const port = process.env.PORT;
     const absoluteUrl = hostUrl + ":" + port + "/" + localUrl;
     return absoluteUrl;
+}
+
+function deleteImage(book) {
+    const oldImagePath = path.join(__dirname, '..', 'images', book.imageUrl);
+
+    // Supprimer l'ancienne image du disque si elle existe
+    fs.existsSync(oldImagePath) && fs.unlinkSync(oldImagePath);
 }
