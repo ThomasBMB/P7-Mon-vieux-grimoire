@@ -1,10 +1,6 @@
-
 const fs = require('fs');
 const path = require('path');
-
 const { Book } = require("../mongoose.schemas/Book.js");
-
-
 
 //Notation d'un livre
 async function postRating(req, res) {
