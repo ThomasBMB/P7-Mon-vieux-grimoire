@@ -6,7 +6,7 @@ J'ai été recruté par la chaîne de librairies Le Vieux Grimoire en tant que d
 
 L'objectif est de développer le back-end avec Node.js et son framework express.
 
-Parmis les demandes spécifiques se trouvent l'inscriptio net la connexion utilisateur, l'ajout, la modification, la suppression et la notation de livres dans une base de données.
+Parmis les demandes spécifiques se trouvent l'inscription et la connexion utilisateur, l'ajout, la modification, la suppression et la notation de livres dans une base de données.
 
 # Installation
 
@@ -16,7 +16,9 @@ Dans le répertoire du projet, vous pouvez exécuter:
 
 ### `npm run dev`
 
-Cela lancera l'application en mode développement avec nodemon.\
+Cela lancera l'application en mode développement avec nodemon.
+
+
 
 Côté front-end, après avoir installé React :
 
