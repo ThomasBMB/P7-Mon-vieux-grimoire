@@ -2,8 +2,8 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 require("./database/mongo.js");
-const { userRouter } = require("./features/users.js");
-const { bookRouter } = require("./features/books.js");
+const { userRouter } = require("./routes/usersRoutes.js");
+const { bookRouter } = require("./routes/booksRoutes");
 
 const app = express();
 

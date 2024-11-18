@@ -1,25 +1,12 @@
-const express = require("express");
+
 const fs = require('fs');
 const path = require('path');
+
 const { Book } = require("../mongoose.schemas/Book.js");
-const { checkToken } = require("../middlewares/checkToken.js");
-const multer = require("multer");
-const { storage } = require("../middlewares/storage.js");
 
-const bookRouter = express.Router();
 
-bookRouter.post("/:id/rating", checkToken, postRating);
-bookRouter.get("/", getBooks);
-bookRouter.get("/bestrating", getBooksWithBestRating);
-bookRouter.get("/:id", getBook);
 
-bookRouter.delete("/:id", checkToken, deleteBook);
-
-bookRouter.post("/", checkToken, multer({ storage: storage }).single("image"), postBooks);
-
-bookRouter.put("/:id", checkToken, multer({ storage: storage }).single("image"), putBook);
-module.exports = { bookRouter };
-
+//Notation d'un livre
 async function postRating(req, res) {
     const id = req.params.id;
     const book = await Book.findById(id);
@@ -58,7 +45,7 @@ async function postRating(req, res) {
 }
 
 
-
+//Affichage des livres les mieux notés
 async function getBooksWithBestRating(req, res) {
     const books = await Book.find().sort({ averageRating: -1 }).limit(3);
     books.forEach((book) => {
@@ -67,36 +54,29 @@ async function getBooksWithBestRating(req, res) {
     res.send(books);
 }
 
+//Modification d'un livre
 async function putBook(req, res) {
     const id = req.params.id;
-
-    // Recherche du livre dans la base de données
     const book = await Book.findById(id);
+
     if (!book) return res.status(404).send("Book not found");
 
-    // Vérifier si une nouvelle image a été téléchargée
     const newImage = req.file ? req.file.filename : null;
 
     try {
-        // Si une nouvelle image a été envoyée, supprimer l'ancienne image
         if (newImage) deleteImage(book);
 
-
-        // Préparer les données du livre à mettre à jour
         const bookData = newImage
             ? {
-                ...JSON.parse(req.body.book), // Récupérer les autres données du livre
-                imageUrl: newImage // Mettre à jour l'URL de l'image
+                ...JSON.parse(req.body.book),
+                imageUrl: newImage
             }
             : { ...req.body };
 
-        // Mettre à jour le livre dans la base de données
         const updatedBook = await Book.findByIdAndUpdate(id, bookData, { new: true });
 
-        // Générer l'URL complète de l'image
         updatedBook.imageUrl = generateImageUrl(updatedBook.imageUrl);
 
-        // Répondre avec le livre mis à jour
         res.send(updatedBook);
     } catch (error) {
         console.error(error);
@@ -104,6 +84,7 @@ async function putBook(req, res) {
     }
 }
 
+//Suppression d'un livre
 async function deleteBook(req, res) {
     const id = req.params.id;
     const book = await Book.findById(id);
@@ -116,6 +97,7 @@ async function deleteBook(req, res) {
     res.send(result);
 }
 
+//Affichage du livre sur sa page
 async function getBook(req, res) {
     const id = req.params.id;
     const book = await Book.findById(id);
@@ -123,13 +105,13 @@ async function getBook(req, res) {
     res.send(book);
 }
 
+//Ajout d'un livre
 async function postBooks(req, res) {
     const bookStringified = req.body.book;
     const book = JSON.parse(bookStringified);
     const file = req.file;
 
     try {
-        // Calculer la moyenne initiale si des notes sont fournies
         const ratings = book.ratings || [];
         const initialAverageRating = ratings.length > 0
             ? ratings.reduce((sum, rating) => sum + rating.grade, 0) / ratings.length
@@ -143,17 +125,28 @@ async function postBooks(req, res) {
             year: book.year,
             genre: book.genre,
             ratings: ratings,
-            averageRating: initialAverageRating // Utilise la moyenne initiale
+            averageRating: initialAverageRating
         });
 
         await newBook.save();
         res.send(newBook);
+
     } catch (error) {
         console.error(error);
+        if (file) {
+            const filePath = path.join(__dirname, "..", "images", file.filename);
+            if (fs.existsSync(filePath)) {
+                fs.unlink(filePath, (unlinkErr) => {
+                    if (unlinkErr) console.error("Erreur lors de la suppression du fichier : ", unlinkErr);
+                });
+            }
+        }
         res.status(500).send("An error occurred while adding the book.");
+
     }
 }
 
+//Affichage des livres
 async function getBooks(req, res) {
     const allBooks = await Book.find();
     allBooks.forEach((book) => {
@@ -163,6 +156,7 @@ async function getBooks(req, res) {
     res.send(allBooks);
 }
 
+//Génération de la couverture
 function generateImageUrl(localUrl) {
     const hostUrl = process.env.HOST_URL;
     const port = process.env.PORT;
@@ -170,9 +164,10 @@ function generateImageUrl(localUrl) {
     return absoluteUrl;
 }
 
+//Suppression d'une image lorsque nécessaire
 function deleteImage(book) {
     const oldImagePath = path.join(__dirname, '..', 'images', book.imageUrl);
-
-    // Supprimer l'ancienne image du disque si elle existe
     fs.existsSync(oldImagePath) && fs.unlinkSync(oldImagePath);
 }
+
+module.exports = { postRating, getBooksWithBestRating, putBook, deleteBook, getBook, postBooks, getBooks };

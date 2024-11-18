@@ -9,36 +9,35 @@ const ratingsSchema = new Schema({
 const bookSchema = new Schema({
     userId: {
         type: String,
-        required: true // Assurer que l'ID de l'utilisateur est obligatoire
+        required: true
     },
     title: {
         type: String,
-        required: [true, 'Title is required'] // Titre est obligatoire
+        required: [true, 'Title is required']
     },
     author: {
         type: String,
-        required: [true, 'Author is required'] // Auteur est obligatoire
+        required: [true, 'Author is required']
     },
     imageUrl: {
         type: String,
-        required: [true, 'Image URL is required'] // URL de l'image est obligatoire
+        required: [true, 'Image URL is required']
     },
     year: {
         type: Number,
-        required: [true, 'Year is required'], // Année est obligatoire
-        max: [new Date().getFullYear(), 'Year cannot be in the future'] // L'année ne peut pas être dans le futur
+        required: [true, 'Year is required'],
+        max: [new Date().getFullYear(), 'Year cannot be in the future']
     },
     genre: {
         type: String,
-        required: [true, 'Genre is required'] // Genre est obligatoire
+        required: [true, 'Genre is required']
     },
     ratings: [ratingsSchema],
     averageRating: {
         type: Number,
-        default: 0 // Note moyenne par défaut à 0
+        default: 0
     }
 });
 
 const Book = mongoose.model("Book", bookSchema);
-
 module.exports = { Book };
