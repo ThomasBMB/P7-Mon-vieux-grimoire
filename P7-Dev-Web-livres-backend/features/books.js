@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const sharp = require("sharp");
 const { Book } = require("../mongoose.schemas/Book.js");
+
 
 //Notation d'un livre
 async function postRating(req, res) {
@@ -123,6 +125,17 @@ async function postBooks(req, res) {
             ratings: ratings,
             averageRating: initialAverageRating
         });
+
+        if (file) {
+            const outputPath = path.join(__dirname, "..", "images", file.filename);
+            await sharp(file.path)
+                .resize({ width: 800 })
+                .toFormat('jpeg', { quality: 50 })
+                .toFile(outputPath);
+
+            sharp.cache(false);
+            fs.unlinkSync(file.path);
+        }
 
         await newBook.save();
         res.send(newBook);
