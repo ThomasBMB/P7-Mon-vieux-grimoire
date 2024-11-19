@@ -62,7 +62,18 @@ async function putBook(req, res) {
     const newImage = req.file ? req.file.filename : null;
 
     try {
-        if (newImage) deleteImage(book);
+        if (newImage) {
+            deleteImage(book);
+            const outputPath = path.join(__dirname, "..", "images", newImage);
+            await sharp(req.file.path)
+                .resize({ width: 800 })
+                .toFormat("jpeg", { quality: 50 })
+                .toFile(outputPath);
+
+            sharp.cache(false);
+            fs.unlinkSync(req.file.path);
+
+        }
 
         const bookData = newImage
             ? {
@@ -76,8 +87,20 @@ async function putBook(req, res) {
         updatedBook.imageUrl = generateImageUrl(updatedBook.imageUrl);
 
         res.send(updatedBook);
+
     } catch (error) {
         console.error(error);
+        if (newImage) {
+            const optimizedImagePath = path.join(__dirname, "..", "images", newImage);
+            if (fs.existsSync(optimizedImagePath)) {
+                fs.unlink(optimizedImagePath, (unlinkErr) => {
+                    if (unlinkErr) {
+                        console.error("Erreur lors de la suppression de l'image optimisée : ", unlinkErr);
+                    }
+                });
+            }
+        }
+
         res.status(500).send("An error occurred while updating the book.");
     }
 }
